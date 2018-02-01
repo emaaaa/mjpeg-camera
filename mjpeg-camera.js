@@ -15,13 +15,18 @@ var util = require('util');
  *    @param {String=} password - the password for auth on the camera
  *    @param {Boolean=} sendImmediately - when true, causes a basic or bearer authentication header to be sent
  *    @param {Number=} timeout - reconnect if no frames after timeout millseconds
- *  @constructor 
+ *  @constructor
  */
 function Camera(options) {
   options = options || {};
   // Streams need this flag to handle object data
   options.objectMode = true;
   options.highWaterMark = 0;
+
+  this.mpjpgConsumerOption = {};
+  this.mpjpgConsumerOption.minimumMotion = options.minimumMotion || 2;
+  this.mpjpgConsumerOption.prebuf = (options.prebuffer || 4) + this.minimumMotion;
+  this.mpjpgConsumerOption.postbuf = options.postbuffer || 4;
 
   this.readable = true;
   this.writable = true;
@@ -70,7 +75,7 @@ Camera.prototype._connect = function(errorCallback) {
     options.auth = {
       user: this.user,
       pass: this.password,
-      sendImmediately: this.sendImmediately 
+      sendImmediately: this.sendImmediately
     };
   }
 
@@ -91,7 +96,7 @@ Camera.prototype._getVideoStream = function(callback) {
   if (!this.connection) {
     this._connect(callback);
   }
-  return this.connection.pipe(new MjpegConsumer());
+  return this.connection.pipe(new MjpegConsumer(this.mpjpgConsumerOption));
 };
 
 /**
